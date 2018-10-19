@@ -1,0 +1,2 @@
+http://learningwebgl.com/blog/?p=571
+(keydown,up이벤트시 부드럽게 입력받는게 설명되어 있음)
