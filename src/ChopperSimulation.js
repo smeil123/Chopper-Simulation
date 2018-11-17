@@ -21,6 +21,11 @@ var FSHADER_SOURCE =
 var ANGLE_STEP = 45.0;
 var bodyAngle = 0.0;
 var current_ty = 0.0;
+var change_angle = false;
+var change_trans = false;
+
+var modelMatrix = new Matrix4();
+modelMatrix.setTranslate(0,0,0);
 function main() {
   // Retrieve <canvas> element
   var canvas = document.getElementById('webgl');
@@ -54,7 +59,7 @@ function main() {
     return;
   }
 
-  var modelMatrix = new Matrix4();
+  // var modelMatrix = new Matrix4();
   var currentAngle = 0.0;
 
   canvas.onmousedown = function(ev){ click(ev, gl,n, currentAngle, modelMatrix,u_ModelMatrix); };
@@ -64,7 +69,7 @@ function main() {
   var tick = function(){
     currentAngle = animate(currentAngle); // angle값 계산
     handleKeys(); // 키입력값으로 angle,transpose값을 계산
-    draw(gl,n,currentAngle,modelMatrix,u_ModelMatrix);
+    modelMatrix = draw(gl,n,currentAngle,modelMatrix,u_ModelMatrix);
     // 웹브라우저가 1초에 60번정도 호출해준다(단, 현재페이지가 보이지 않는경우에는 호출되지 않는다)
     requestAnimationFrame(tick,canvas); // tick을 주기적으로 호출
   };
@@ -84,33 +89,36 @@ function handleKeyDown(ev) {
     }
   }
 }
-
 function handleKeys() {
   if (presskey[37]) {
     // Left cursor key
     // 시계방향으로 10도 회전
     console.log("bodyAngle= ",bodyAngle);
-    bodyAngle = bodyAngle+10.0;
+    change_angle = true;
+    bodyAngle = 10.0;
     presskey[37] = false;
   }
   if (presskey[39]) {
     // Right cursor key
     // 반시계 방향으로 10도 회전
     console.log("bodyAngle= ",bodyAngle);
-    bodyAngle = bodyAngle-10.0;
+    change_angle = true;
+    bodyAngle = -10.0;
     presskey[39] = false;
   }
   if (presskey[38]) {
     // Up cursor key
     // 0.05만큼 앞으로
-    current_ty += 0.05;
+    change_trans = true;
+    current_ty = 0.05;
     presskey[38] = false;
   }
   if (presskey[40]) {
     // Down cursor key
     // 0.05만큼 뒤로
-    current_ty -= 0.05;
-    presskey[40] = false;
+    change_trans = true;
+    current_ty = -0.05;
+    presskey[40] = false;  
   }
 }
 
@@ -163,14 +171,17 @@ function initVertexBuffers(gl) {
   console.log("end initVertexBuffers")
   return n;
 }
-var current_tx = 0;
 function draw(gl,n,currentAngle,modelMatrix,u_ModelMatrix){
   //z축을 기준으로 currentAngle만큼 회전
 
   //헬리콥터 몸체
-  
-  modelMatrix.setTranslate(0,current_ty,0);
-  modelMatrix.rotate(bodyAngle,0,0,1);
+  if(change_angle){
+    modelMatrix.rotate(bodyAngle,0,0,1);
+    change_angle = false;
+  }else if(change_trans){
+    modelMatrix.translate(0,current_ty,0);    
+    change_trans = false;
+   }
   gl.uniformMatrix4fv(u_ModelMatrix,false,modelMatrix.elements);
 
   //clearColor()로 설정한 값으로 초기화
@@ -181,10 +192,14 @@ function draw(gl,n,currentAngle,modelMatrix,u_ModelMatrix){
 
   //프로펠러
   // modelMatrix.setTranslate(0,current_ty,0);
-  modelMatrix.rotate(currentAngle,0,0,1);
+  var p_modelMatrix = new Matrix4();
+  p_modelMatrix.set(modelMatrix);
+  p_modelMatrix.rotate(currentAngle,0,0,1);
   //vertex shader의 uniform variable의 값을 설정해준다
-  gl.uniformMatrix4fv(u_ModelMatrix,false,modelMatrix.elements);
+  gl.uniformMatrix4fv(u_ModelMatrix,false,p_modelMatrix.elements);
   gl.drawArrays(gl.TRIANGLE_STRIP,3,4);
+
+  return modelMatrix;
 }
 
 var g_last = Date.now();
