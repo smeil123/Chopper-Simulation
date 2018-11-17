@@ -168,9 +168,9 @@ function draw(gl,n,currentAngle,modelMatrix,u_ModelMatrix){
   //z축을 기준으로 currentAngle만큼 회전
 
   //헬리콥터 몸체
-  modelMatrix.setRotate(bodyAngle,0,0,1);
-  modelMatrix.translate(0,current_ty,0);
-
+  
+  modelMatrix.setTranslate(0,current_ty,0);
+  modelMatrix.rotate(bodyAngle,0,0,1);
   gl.uniformMatrix4fv(u_ModelMatrix,false,modelMatrix.elements);
 
   //clearColor()로 설정한 값으로 초기화
